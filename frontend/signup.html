@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up | ApPointly</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>Sign Up for Apture</h2>
+
+    <!-- Role Toggle -->
+    <div class="role-switch">
+      <span>I am a</span>
+      <label class="switch">
+        <input type="checkbox" id="roleToggle" onchange="toggleRole()" checked />
+        <span class="slider"></span>
+      </label>
+      <span id="roleText">Client</span>
+    </div>
+
+    <!-- Signup Form -->
+    <form>
+      <input type="hidden" id="roleInput" name="role" value="client" />
+      <input type="text" placeholder="Full Name" required />
+      <input type="email" placeholder="Email" required />
+      <input type="tel" placeholder="Phone Number" required />
+      <input type="password" placeholder="Password" required />
+      <button type="submit">Sign Up</button>
+    </form>
+
+    <p class="auth-toggle-text">
+      Already a member? <a href="login.html">Log in</a>
+    </p>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
