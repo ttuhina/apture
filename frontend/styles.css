@@ -117,3 +117,57 @@ button:hover {
 .auth-toggle-text a:hover {
   text-decoration: underline;
 }
+.dashboard-container {
+  padding: 2rem;
+  max-width: 900px;
+  margin: auto;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.dashboard-header nav button {
+  margin-left: 0.5rem;
+  padding: 0.4rem 1rem;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dashboard-header nav button:hover {
+  background-color: #4338ca;
+}
+
+.appointments-section,
+.notifications-section {
+  margin-top: 2rem;
+}
+
+.appointments-list,
+.notifications-list {
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.appointments-list .appointment-card {
+  background: white;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

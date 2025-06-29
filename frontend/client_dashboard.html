@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Client Dashboard | ApPointly</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <div class="dashboard-container">
+    <header class="dashboard-header">
+      <h1>Welcome, Client 👋</h1>
+      <nav>
+        <button onclick="location.href='appointments.html'">Book Appointment</button>
+        <button onclick="location.href='profile.html'">Profile</button>
+        <button onclick="logout()">Logout</button>
+      </nav>
+    </header>
+
+    <section class="appointments-section">
+      <h2>Your Upcoming Appointments</h2>
+      <div id="appointmentsList" class="appointments-list">
+        <!-- Appointments will be inserted here by JS -->
+      </div>
+    </section>
+
+    <section class="notifications-section">
+      <h2>Notifications</h2>
+      <ul id="notificationsList" class="notifications-list">
+        <!-- Example -->
+        <li>🕐 You have an appointment with Dr. Smith on July 2nd at 10:00 AM</li>
+      </ul>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
