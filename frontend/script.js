@@ -144,7 +144,7 @@ function logout() {
 document.addEventListener('DOMContentLoaded', loadAppointments);
 // script.js
 
-function toggleRole() {
+ffunction toggleRole() {
   const toggle = document.getElementById('roleToggle');
   const roleText = document.getElementById('roleText');
   const roleInput = document.getElementById('roleInput');
@@ -157,6 +157,43 @@ function toggleRole() {
     roleInput.value = 'provider';
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('loginForm');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    const role = document.getElementById('roleInput').value;
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // ✅ Login success → redirect based on role
+        if (role === 'client') {
+          window.location.href = 'client_dashboard.html';
+        } else {
+          window.location.href = 'provider_dashboard.html';
+        }
+      } else {
+        alert(data.message || 'Login failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Server error. Try again later.');
+    }
+  });
+});
+
 
 // 🔐 Handle login submission
 document.addEventListener('DOMContentLoaded', () => {
