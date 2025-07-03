@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Provider Dashboard | ApPointly</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <div class="dashboard-container">
+    <header class="dashboard-header">
+      <h1>Welcome, Provider 👩‍⚕️</h1>
+      <nav>
+        <button onclick="location.href='availability.html'">Set Availability</button>
+        <button onclick="location.href='profile.html'">Profile</button>
+        <button onclick="logout()">Logout</button>
+      </nav>
+    </header>
+
+    <section class="appointments-section">
+      <h2>Today's Appointments</h2>
+      <div id="appointmentsList" class="appointments-list">
+        <!-- Appointments rendered by JS -->
+      </div>
+    </section>
+
+    <section class="notifications-section">
+      <h2>Notifications</h2>
+      <ul id="notificationsList" class="notifications-list">
+        <li>🆕 New appointment request from Meera for July 3, 2:00 PM</li>
+      </ul>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
