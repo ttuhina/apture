@@ -14,6 +14,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'login.html'));
 });
 
+// 🔐 Login Route
 app.post('/api/login', async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -34,6 +35,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// 📅 Fetch appointments for client or provider
 app.get('/api/appointments/:userId', async (req, res) => {
   const { userId } = req.params;
   const { role } = req.query;
@@ -42,20 +44,24 @@ app.get('/api/appointments/:userId', async (req, res) => {
     let rows;
 
     if (role === 'client') {
+      // Fetch appointments for the client
       [rows] = await db.query(
         `SELECT a.appointment_date, a.appointment_time, p.specialization
          FROM appointments a
-         JOIN providers p ON a.provider_id = p.user_id
+         JOIN providers p ON a.provider_id = p.id
          WHERE a.client_id = ? AND a.status = 'booked'
          ORDER BY a.appointment_date, a.appointment_time`,
         [userId]
       );
     } else if (role === 'provider') {
+      // Fetch appointments for the provider by mapping user_id to provider_id
       [rows] = await db.query(
         `SELECT a.appointment_date, a.appointment_time, u.name AS client_name
          FROM appointments a
          JOIN users u ON a.client_id = u.id
-         WHERE a.provider_id = ? AND a.status = 'booked'
+         WHERE a.provider_id = (
+           SELECT id FROM providers WHERE user_id = ?
+         ) AND a.status = 'booked'
          ORDER BY a.appointment_date, a.appointment_time`,
         [userId]
       );
@@ -70,6 +76,7 @@ app.get('/api/appointments/:userId', async (req, res) => {
   }
 });
 
+// ✍️ Signup Route
 app.post('/api/signup', async (req, res) => {
   const { name, email, phone, password, role } = req.body;
 
@@ -103,5 +110,6 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
