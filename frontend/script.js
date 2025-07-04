@@ -1,3 +1,5 @@
+
+
 // 🔄 Role toggle handler
 function toggleRole() {
   const toggle = document.getElementById('roleToggle');
@@ -18,46 +20,6 @@ function logout() {
   localStorage.clear();
   alert('Logged out');
   window.location.href = 'login.html';
-}
-
-// 📥 Load appointments only if on a dashboard
-async function loadAppointments() {
-  const userId = localStorage.getItem('userId');
-  const role = localStorage.getItem('role');
-
-  if (!userId || !role) {
-    alert('Session expired. Please login again.');
-    window.location.href = 'login.html';
-    return;
-  }
-
-  const appointmentsContainer = document.getElementById('appointmentsList');
-  if (!appointmentsContainer) return; // Not on dashboard
-
-  try {
-    const res = await fetch(`/api/appointments/${userId}`);
-    const appointments = await res.json();
-
-    if (appointments.length === 0) {
-      appointmentsContainer.innerHTML = '<p>No upcoming appointments.</p>';
-      return;
-    }
-
-    appointmentsContainer.innerHTML = '';
-
-    appointments.forEach(app => {
-      const div = document.createElement('div');
-      div.classList.add('appointment-item');
-      div.innerHTML = `
-        <p>📅 ${app.appointment_date} at 🕑 ${app.appointment_time}</p>
-        <p>${role === 'client' ? '👩‍⚕️ ' : '🧑‍💼 '}${app.specialization || app.client_name}</p>
-      `;
-      appointmentsContainer.appendChild(div);
-    });
-  } catch (err) {
-    console.error('Error loading appointments:', err);
-    appointmentsContainer.innerHTML = '<p>Error loading appointments.</p>';
-  }
 }
 
 // 🚪 Login handler (only on login.html)
@@ -86,11 +48,8 @@ async function handleLogin() {
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('role', role);
 
-        if (role === 'client') {
-          window.location.href = 'client_dashboard.html';
-        } else {
-          window.location.href = 'provider_dashboard.html';
-        }
+        window.location.href =
+          role === 'client' ? 'client_dashboard.html' : 'provider_dashboard.html';
       } else {
         alert(data.message || 'Login failed');
       }
@@ -101,56 +60,123 @@ async function handleLogin() {
   });
 }
 
-// 🧠 Run correct logic on correct page
+// ✍️ Signup handler (only on signup.html)
+const signupForm = document.getElementById('signupForm');
+const isSignupPage = document.title.includes('Sign Up');
+
+if (isSignupPage && signupForm) {
+  signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('nameInput').value.trim();
+    const email = document.getElementById('emailInput').value.trim();
+    const phone = document.getElementById('phoneInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    const role = document.getElementById('roleInput').value;
+
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, password, role }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('role', role);
+        window.location.href =
+          role === 'client' ? 'client_dashboard.html' : 'provider_dashboard.html';
+      } else {
+        alert(data.message || 'Signup failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Server error. Try again later.');
+    }
+  });
+}
+
+// 📥 Load appointments for client or provider
+async function loadAppointments() {
+  const userId = localStorage.getItem('userId');
+  const role = localStorage.getItem('role');
+
+  if (!userId || !role) {
+    alert('Session expired. Please login again.');
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const appointmentsContainer = document.getElementById('appointmentsList');
+  const calendarEl = document.getElementById('calendar');
+  const notificationsEl = document.getElementById('notificationsList');
+
+  if (!appointmentsContainer || !calendarEl) return;
+
+  try {
+    const res = await fetch(`/api/appointments/${userId}?role=${role}`);
+    const appointments = await res.json();
+
+    appointmentsContainer.innerHTML = '';
+    if (appointments.length === 0) {
+      appointmentsContainer.innerHTML = '<p>No upcoming appointments.</p>';
+    } else {
+      appointments.forEach(app => {
+        const div = document.createElement('div');
+        div.classList.add('appointment-item');
+        div.innerHTML = `
+          <p>📅 ${app.appointment_date} at 🕑 ${app.appointment_time}</p>
+          <p>👤 ${role === 'provider' ? app.client_name : app.specialization}</p>
+        `;
+        appointmentsContainer.appendChild(div);
+      });
+    }
+
+    if (notificationsEl) {
+      notificationsEl.innerHTML = '';
+      appointments.forEach(app => {
+        const li = document.createElement('li');
+        li.textContent = `🕒 Appointment on ${app.appointment_date} at ${app.appointment_time} with ${role === 'provider' ? app.client_name : app.specialization}`;
+        notificationsEl.appendChild(li);
+      });
+    }
+
+    const calendarEvents = appointments.map(app => ({
+      title: role === 'provider' ? app.client_name : app.specialization || 'Appointment',
+      start: `${app.appointment_date}T${app.appointment_time}`,
+      color: '#4a90e2',
+      allDay: false
+    }));
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      timeZone: 'local',
+      height: '100%',
+      events: calendarEvents,
+      headerToolbar: {
+        left: 'prev,next',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek'
+      }
+    });
+
+    calendar.render();
+  } catch (err) {
+    console.error('❌ Error loading appointments:', err);
+    appointmentsContainer.innerHTML = '<p>Error loading appointments.</p>';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const pageTitle = document.title;
 
   if (pageTitle.includes('Login')) {
-    handleLogin(); // only run login logic on login page
+    handleLogin();
   }
 
   if (pageTitle.includes('Dashboard')) {
-    loadAppointments(); // only load appointments on dashboard
+    loadAppointments();
   }
 });
-  const signupForm = document.getElementById('signupForm');
-  const isSignupPage = document.title.includes('Sign Up');
-
-  if (isSignupPage && signupForm) {
-    signupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const name = document.getElementById('nameInput').value.trim();
-      const email = document.getElementById('emailInput').value.trim();
-      const phone = document.getElementById('phoneInput').value.trim();
-      const password = document.getElementById('passwordInput').value;
-      const role = document.getElementById('roleInput').value;
-
-      try {
-        const res = await fetch('/api/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, phone, password, role }),
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          localStorage.setItem('userId', data.userId);
-          localStorage.setItem('role', role);
-
-          // Redirect to correct dashboard
-          if (role === 'client') {
-            window.location.href = 'client_dashboard.html';
-          } else {
-            window.location.href = 'provider_dashboard.html';
-          }
-        } else {
-          alert(data.message || 'Signup failed');
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Server error. Try again later.');
-      }
-    });
-  }

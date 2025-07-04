@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Client Dashboard | ApPointly</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css"/>
 </head>
+
 <body>
   <div class="dashboard-container">
     <header class="dashboard-header">
@@ -17,22 +19,28 @@
       </nav>
     </header>
 
-    <section class="appointments-section">
-      <h2>Your Upcoming Appointments</h2>
-      <div id="appointmentsList" class="appointments-list">
-        <!-- Appointments will be inserted here by JS -->
+    <div class="dashboard-content">
+      <div class="left-panel">
+        <section class="appointments-section">
+          <h2>Your Upcoming Appointments</h2>
+          <div id="appointmentsList" class="appointments-list"></div>
+        </section>
       </div>
-    </section>
 
-    <section class="notifications-section">
-      <h2>Notifications</h2>
-      <ul id="notificationsList" class="notifications-list">
-        <!-- Example -->
-        <li>🕐 You have an appointment with Dr. Smith on July 2nd at 10:00 AM</li>
-      </ul>
-    </section>
+      <div class="right-panel">
+        <section class="calendar-section">
+          <h2>🗓️ Calendar</h2>
+          <div id="calendar"></div>
+        </section>
+
+        <section class="notifications-section">
+          <h2>🔔 Notifications</h2>
+          <ul id="notificationsList" class="notifications-list"></ul>
+        </section>
+      </div>
+    </div>
   </div>
-
-  <script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script src="script.js"></script> 
 </body>
 </html>

@@ -1,14 +1,14 @@
-body {
+/* === GLOBAL STYLES === */
+html, body {
   margin: 0;
   padding: 0;
-  background: linear-gradient(to bottom right, #eef2ff, #e0e7ff);
+  height: 100vh;
   font-family: sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  overflow: hidden;
+  background: #f7f7f7;
 }
 
+/* === AUTH PAGE STYLES (Login/Signup) === */
 .container {
   background: white;
   padding: 2rem;
@@ -117,17 +117,22 @@ button:hover {
 .auth-toggle-text a:hover {
   text-decoration: underline;
 }
+
+/* === DASHBOARD LAYOUT === */
 .dashboard-container {
-  padding: 2rem;
-  max-width: 900px;
-  margin: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 .dashboard-header {
+  padding: 1rem;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  flex-shrink: 0;
 }
 
 .dashboard-header h1 {
@@ -135,39 +140,125 @@ button:hover {
   color: #333;
 }
 
-.dashboard-header nav button {
+.dashboard-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.left-panel {
+  width: 60%;
+  padding: 1rem;
+  overflow-y: auto;
+  background: #f7f7f7;
+}
+
+.right-panel {
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 1rem;
+  min-height: 0;
+}
+
+nav button {
   margin-left: 0.5rem;
-  padding: 0.4rem 1rem;
-  background-color: #4f46e5;
+  padding: 0.5rem 1rem;
+  background: #4a90e2;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
+  transition: background 0.3s;
 }
 
-.dashboard-header nav button:hover {
-  background-color: #4338ca;
+nav button:hover {
+  background: #357abd;
 }
 
-.appointments-section,
-.notifications-section {
-  margin-top: 2rem;
-}
-
-.appointments-list,
-.notifications-list {
-  background: #f3f4f6;
+/* === CALENDAR & APPOINTMENTS === */
+.calendar-section {
+  flex: 1;
+  background: #ffffff;
+  padding: 1rem;
   border-radius: 10px;
-  padding: 1rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.appointments-list .appointment-card {
-  background: white;
+.calendar-section h2 {
+  margin: 0 0 1rem 0;
+  flex-shrink: 0;
+}
+
+#calendar {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.fc {
+  height: 100% !important;
+}
+
+.fc-view-harness {
+  height: 100% !important;
+}
+
+/* === NOTIFICATIONS === */
+.notifications-section {
+  flex: 1;
+  background: #ffffff;
   padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.notifications-section h2 {
+  margin: 0 0 1rem 0;
+  flex-shrink: 0;
+}
+
+.notifications-list {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notifications-list li {
+  padding: 0.8rem;
+  margin-bottom: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #28a745;
+}
+
+/* === APPOINTMENTS === */
+.appointments-section {
+  background: #ffffff;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+.appointments-section h2 {
+  margin-top: 0;
+}
+
+.appointments-list .appointment-item {
+  background: #fff;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+  border-left: 4px solid #4a90e2;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
