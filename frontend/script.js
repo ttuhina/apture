@@ -134,6 +134,23 @@ async function loadAppointments() {
       });
     }
 
+
+// 🧼 Optional: Logout confirmation
+function confirmLogout() {
+  const dialog = document.getElementById('logoutConfirmDialog');
+  dialog.showModal();
+}
+
+function confirmLogoutYes() {
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+
+function confirmLogoutNo() {
+  document.getElementById('logoutConfirmDialog').close();
+}
+
+
     if (notificationsEl) {
       notificationsEl.innerHTML = '';
       appointments.forEach(app => {
@@ -169,14 +186,97 @@ async function loadAppointments() {
   }
 }
 
+async function updateDashboardHeader() {
+  const userId = localStorage.getItem('userId');
+  const role = localStorage.getItem('role');
+
+  if (!userId || !role) return;
+
+  try {
+    const res = await fetch(`/api/user/${userId}`);
+    const user = await res.json();
+
+    const header = document.getElementById('dashboardTitle');
+    if (header) {
+      header.textContent = `Welcome, ${user.name} ${role === 'provider' ? '👩‍⚕️' : '🙂'}`;
+    }
+  } catch (err) {
+    console.error('Failed to update header name', err);
+  }
+}
+function openAvailabilityDialog() {
+  document.getElementById('availabilityDialog').showModal();
+}
+
+function saveAvailability() {
+  const workingHours = document.getElementById('workingHoursInput').value.trim();
+  const userId = localStorage.getItem('userId');
+
+  fetch(`/api/provider-profile/${userId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ working_hours: workingHours })
+  })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message || 'Working hours updated');
+      document.getElementById('availabilityDialog').close();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Error saving availability');
+    });
+}
+// 🌐 Opens the profile dialog
+async function openProfileDialog() {
+  const userId = localStorage.getItem('userId');
+  const dialog = document.getElementById('profileDialog');
+
+  try {
+    const res = await fetch(`/api/provider-profile/${userId}`);
+    const data = await res.json();
+
+    document.getElementById('profileName').value = data.name;
+    document.getElementById('profileSpecialization').value = data.specialization;
+    document.getElementById('profileLocation').value = data.location;
+    document.getElementById('profileBio').value = data.bio;
+    document.getElementById('profileWorkingHours').value = data.working_hours;
+
+    dialog.showModal();
+  } catch (err) {
+    console.error('Failed to load profile:', err);
+    alert('Error loading profile.');
+  }
+}
+
+// 🌐 Confirm Logout Logic
+function confirmLogout() {
+  const dialog = document.getElementById('logoutConfirmDialog');
+  dialog.showModal();
+}
+
+function confirmLogoutYes() {
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+
+function confirmLogoutNo() {
+  document.getElementById('logoutConfirmDialog').close();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const pageTitle = document.title;
+  const logoutBtn = document.querySelector('button[onclick="logout()"]');
 
   if (pageTitle.includes('Login')) {
     handleLogin();
   }
 
+  if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+  // Load appointments on dashboard
   if (pageTitle.includes('Dashboard')) {
     loadAppointments();
+    updateDashboardHeader(); // Call to update header name
   }
 });

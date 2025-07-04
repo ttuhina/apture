@@ -15,11 +15,12 @@
   <div class="dashboard-container">
     <!-- Header -->
     <header class="dashboard-header">
-      <h1>Welcome, Provider 👩‍⚕️</h1>
+      <h1 id="dashboardTitle">Welcome, Provider 👩‍⚕️</h1>
+
       <nav>
-        <button onclick="location.href='availability.html'">Set Availability</button>
-        <button onclick="location.href='profile.html'">Profile</button>
-        <button onclick="logout()">Logout</button>
+        <button onclick="openAvailabilityDialog()">Set Availability</button>
+        <button onclick="openProfileDialog()">Profile</button>
+        <button onclick="confirmLogout()">Logout</button>
       </nav>
     </header>
 
@@ -51,6 +52,41 @@
       </div>
     </div>
   </div>
+
+  <!-- Dialogs -->
+  <dialog id="availabilityDialog">
+    <form method="dialog">
+      <h3>Set Your Working Hours</h3>
+      <label for="workingHoursInput">Working Hours (e.g., Mon-Fri: 9AM - 5PM)</label><br>
+      <input type="text" id="workingHoursInput" /><br><br>
+      <button type="submit" onclick="saveAvailability()">Save</button>
+      <button type="button" onclick="document.getElementById('availabilityDialog').close()">Cancel</button>
+    </form>
+  </dialog>
+
+  <dialog id="profileDialog">
+    <form method="dialog">
+      <h3>Your Profile</h3>
+      <label>Name:</label>
+      <input type="text" id="providerName" /><br>
+      <label>Specialization:</label>
+      <input type="text" id="providerSpecialization" /><br>
+      <label>Location:</label>
+      <input type="text" id="providerLocation" /><br>
+      <label>Bio:</label>
+      <textarea id="providereBio"></textarea><br>
+      <label>Working Hours:</label>
+      <input type="text" id="providerWorkingHours" /><br><br>
+      <button onclick="saveProviderProfile()">Update</button>
+      <button type="button" onclick="document.getElementById('profileDialog').close()">Close</button>
+    </form>
+  </dialog>
+  <dialog id="logoutConfirmDialog">
+  <p>Are you sure you want to logout?</p>
+  <button onclick="confirmLogoutYes()">Yes</button>
+  <button onclick="confirmLogoutNo()">No</button>
+</dialog>
+
 
   <!-- FullCalendar Script -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>

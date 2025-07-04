@@ -10,6 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
+// Serve homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'login.html'));
 });
@@ -44,7 +45,6 @@ app.get('/api/appointments/:userId', async (req, res) => {
     let rows;
 
     if (role === 'client') {
-      // Fetch appointments for the client
       [rows] = await db.query(
         `SELECT a.appointment_date, a.appointment_time, p.specialization
          FROM appointments a
@@ -54,7 +54,6 @@ app.get('/api/appointments/:userId', async (req, res) => {
         [userId]
       );
     } else if (role === 'provider') {
-      // Fetch appointments for the provider by mapping user_id to provider_id
       [rows] = await db.query(
         `SELECT a.appointment_date, a.appointment_time, u.name AS client_name
          FROM appointments a
@@ -95,13 +94,21 @@ app.post('/api/signup', async (req, res) => {
     );
     const userId = userResult.insertId;
 
-    if (role === 'provider') {
-      await db.query(
-        `INSERT INTO providers (user_id, category, specialization, location, bio, rating)
-         VALUES (?, 'Salon', 'Hair & Skin', 'Mumbai', 'Experienced beauty expert', 4.9)`,
-        [userId]
-      );
-    }
+   if (role === 'provider') {
+  await db.query(
+    `INSERT INTO providers (
+      user_id,
+      category,
+      specialization,
+      location,
+      bio,
+      rating,
+      working_hours
+    ) VALUES (?, NULL, NULL, NULL, NULL, NULL, NULL)`,
+    [userId]
+  );
+}
+
 
     res.status(201).json({ message: 'Signup successful', userId });
   } catch (err) {
@@ -110,6 +117,52 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
+// 🧾 Get provider profile
+app.get('/api/provider-profile/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const [rows] = await db.query(
+      `SELECT u.name, p.specialization, p.location, p.bio, p.working_hours
+       FROM users u
+       JOIN providers p ON u.id = p.user_id
+       WHERE u.id = ?`,
+      [userId]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: 'Provider not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch profile' });
+  }
+});
+
+// ✏️ Update provider profile
+app.put('/api/provider-profile/:userId', async (req, res) => {
+  const { userId } = req.params;
+  const { name, specialization, location, bio, working_hours } = req.body;
+
+  try {
+    await db.query(`UPDATE users SET name = ? WHERE id = ?`, [name, userId]);
+    await db.query(
+      `UPDATE providers SET specialization = ?, location = ?, bio = ?, working_hours = ? WHERE user_id = ?`,
+      [specialization, location, bio, working_hours, userId]
+    );
+    res.json({ message: 'Profile updated' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update profile' });
+  }
+});
+
 // ✅ Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
+app.get('/api/user/:userId', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT name FROM users WHERE id = ?', [req.params.userId]);
+    if (rows.length === 0) return res.status(404).json({ message: 'User not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching user' });
+  }
+});
