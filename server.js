@@ -154,6 +154,41 @@ app.put('/api/provider-profile/:userId', async (req, res) => {
   }
 });
 
+// 🔍 Search providers by name/specialization
+app.get('/api/search-providers', async (req, res) => {
+  const q = `%${req.query.q}%`;
+  try {
+    const [results] = await db.query(
+      `SELECT u.id, u.name, p.specialization 
+       FROM users u 
+       JOIN providers p ON u.id = p.user_id 
+       WHERE u.name LIKE ? OR p.specialization LIKE ?`,
+      [q, q]
+    );
+    res.json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Search failed' });
+  }
+});
+
+// 📩 Client requests appointment
+app.post('/api/request-appointment', async (req, res) => {
+  const { client_id, provider_id, requested_date, requested_time } = req.body;
+  try {
+    await db.query(
+      `INSERT INTO appointment_requests (client_id, provider_id, requested_date, requested_time)
+       VALUES (?, ?, ?, ?)`,
+      [client_id, provider_id, requested_date, requested_time]
+    );
+    res.json({ message: 'Appointment request sent!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Could not request appointment' });
+  }
+});
+
+
 // ✅ Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
