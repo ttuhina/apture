@@ -18,6 +18,7 @@
       <h1 id="dashboardTitle">Welcome, Provider 👩‍⚕️</h1>
 
       <nav>
+        <button onclick="location.href='provider_appointments.html'">Book Appointment</button>
         <button onclick="openAvailabilityDialog()">Set Availability</button>
         <button onclick="openProfileDialog()">Profile</button>
         <button onclick="confirmLogout()">Logout</button>
@@ -31,6 +32,14 @@
         <section class="appointments-section">
           <h2>Your Upcoming Appointments</h2>
           <div id="appointmentsList" class="appointments-list">
+            <!-- Filled by JS -->
+          </div>
+        </section>
+
+        <!-- Appointment Requests Section -->
+        <section class="requests-section">
+          <h2>📋 Appointment Requests</h2>
+          <div id="requestsList" class="requests-list">
             <!-- Filled by JS -->
           </div>
         </section>
@@ -57,10 +66,35 @@
   <dialog id="availabilityDialog">
     <form method="dialog">
       <h3>Set Your Working Hours</h3>
-      <label for="workingHoursInput">Working Hours (e.g., Mon-Fri: 9AM - 5PM)</label><br>
-      <input type="text" id="workingHoursInput" /><br><br>
-      <button type="submit" onclick="saveAvailability()">Save</button>
-      <button type="button" onclick="document.getElementById('availabilityDialog').close()">Cancel</button>
+      <div class="availability-form">
+        <label>Select Working Days:</label>
+        <div class="days-selection">
+          <label><input type="checkbox" value="Monday"> Monday</label>
+          <label><input type="checkbox" value="Tuesday"> Tuesday</label>
+          <label><input type="checkbox" value="Wednesday"> Wednesday</label>
+          <label><input type="checkbox" value="Thursday"> Thursday</label>
+          <label><input type="checkbox" value="Friday"> Friday</label>
+          <label><input type="checkbox" value="Saturday"> Saturday</label>
+          <label><input type="checkbox" value="Sunday"> Sunday</label>
+        </div>
+        
+        <label for="startTime">Start Time:</label>
+        <input type="time" id="startTime" required />
+        
+        <label for="endTime">End Time:</label>
+        <input type="time" id="endTime" required />
+        
+        <label for="breakStart">Break Start (Optional):</label>
+        <input type="time" id="breakStart" />
+        
+        <label for="breakEnd">Break End (Optional):</label>
+        <input type="time" id="breakEnd" />
+        
+        <div class="dialog-buttons">
+          <button type="submit" onclick="saveAvailability()">Save</button>
+          <button type="button" onclick="document.getElementById('availabilityDialog').close()">Cancel</button>
+        </div>
+      </div>
     </form>
   </dialog>
 
@@ -74,19 +108,19 @@
       <label>Location:</label>
       <input type="text" id="providerLocation" /><br>
       <label>Bio:</label>
-      <textarea id="providereBio"></textarea><br>
+      <textarea id="providerBio"></textarea><br>
       <label>Working Hours:</label>
       <input type="text" id="providerWorkingHours" /><br><br>
       <button onclick="saveProviderProfile()">Update</button>
       <button type="button" onclick="document.getElementById('profileDialog').close()">Close</button>
     </form>
   </dialog>
-  <dialog id="logoutConfirmDialog">
-  <p>Are you sure you want to logout?</p>
-  <button onclick="confirmLogoutYes()">Yes</button>
-  <button onclick="confirmLogoutNo()">No</button>
-</dialog>
 
+  <dialog id="logoutConfirmDialog">
+    <p>Are you sure you want to logout?</p>
+    <button onclick="confirmLogoutYes()">Yes</button>
+    <button onclick="confirmLogoutNo()">No</button>
+  </dialog>
 
   <!-- FullCalendar Script -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>

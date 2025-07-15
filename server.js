@@ -73,16 +73,15 @@ app.get('/api/appointments/:userId', async (req, res) => {
   try {
     let rows;
     if (role === 'client') {
-  [rows] = await db.query(`
-    SELECT a.appointment_date, a.appointment_time, u.name AS provider_name, p.specialization
-    FROM appointments a
-    JOIN providers p ON a.provider_id = p.id
-    JOIN users u ON p.user_id = u.id
-    WHERE a.client_id = ? AND a.status = 'booked'
-    ORDER BY a.appointment_date, a.appointment_time
-  `, [userId]);
-}
- else if (role === 'provider') {
+      [rows] = await db.query(`
+        SELECT a.appointment_date, a.appointment_time, u.name AS provider_name, p.specialization
+        FROM appointments a
+        JOIN providers p ON a.provider_id = p.id
+        JOIN users u ON p.user_id = u.id
+        WHERE a.client_id = ? AND a.status = 'booked'
+        ORDER BY a.appointment_date, a.appointment_time
+      `, [userId]);
+    } else if (role === 'provider') {
       [rows] = await db.query(`
         SELECT a.appointment_date, a.appointment_time, u.name AS client_name
         FROM appointments a
@@ -185,7 +184,25 @@ app.get('/api/providers/search', async (req, res) => {
   }
 });
 
-// 📆 Availability
+// 🔍 Client Search (NEW - for provider appointments page)
+app.get('/api/clients/search', async (req, res) => {
+  const query = `%${req.query.query}%`;
+  try {
+    const [rows] = await db.query(`
+      SELECT id, name, email
+      FROM users
+      WHERE role = 'client'
+        AND (name LIKE ? OR email LIKE ?)
+    `, [query, query]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error searching clients' });
+  }
+});
+
+// 📆 Provider Availability (existing)
 app.get('/api/providers/:userId/availability', async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -195,6 +212,57 @@ app.get('/api/providers/:userId/availability', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch availability' });
+  }
+});
+
+// 📆 Client Availability (NEW - for provider appointments page)
+app.get('/api/clients/:userId/availability', async (req, res) => {
+  try {
+    // Get provider's availability based on user_id
+    const [providerRows] = await db.query('SELECT id FROM providers WHERE user_id = ?', [req.params.userId]);
+    if (!providerRows.length) {
+      return res.status(404).json({ message: 'Provider not found' });
+    }
+    
+    const providerId = providerRows[0].id;
+    const [rows] = await db.query(
+      `SELECT * FROM availability WHERE provider_id = ?`, [providerId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch availability' });
+  }
+});
+
+// 📅 Set Provider Availability (NEW)
+app.post('/api/provider-availability', async (req, res) => {
+  const { provider_user_id, days, start, end, bs, be } = req.body;
+  
+  try {
+    // Get provider ID from user ID
+    const [providerRows] = await db.query('SELECT id FROM providers WHERE user_id = ?', [provider_user_id]);
+    if (!providerRows.length) {
+      return res.status(404).json({ message: 'Provider not found' });
+    }
+    
+    const providerId = providerRows[0].id;
+    
+    // Delete existing availability for this provider
+    await db.query('DELETE FROM availability WHERE provider_id = ?', [providerId]);
+    
+    // Insert new availability for each selected day
+    for (const day of days) {
+      await db.query(`
+        INSERT INTO availability (provider_id, day_of_week, start_time, end_time, break_start, break_end)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [providerId, day, start, end, bs, be]);
+    }
+    
+    res.json({ message: 'Availability saved successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to save availability' });
   }
 });
 
@@ -218,6 +286,73 @@ app.post('/api/appointment-requests', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to request appointment' });
+  }
+});
+
+// 📋 Get Appointment Requests for Provider (NEW)
+app.get('/api/appointment-requests/provider/:userId', async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    const [rows] = await db.query(`
+      SELECT ar.id, ar.requested_date, ar.requested_time, ar.status, ar.created_at,
+             u.name AS client_name, u.email AS client_email
+      FROM appointment_requests ar
+      JOIN users u ON ar.client_id = u.id
+      JOIN providers p ON ar.provider_id = p.id
+      WHERE p.user_id = ? AND ar.status = 'pending'
+      ORDER BY ar.created_at DESC
+    `, [userId]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch appointment requests' });
+  }
+});
+
+// 📤 Respond to Appointment Request (NEW)
+app.post('/api/appointment-requests/respond', async (req, res) => {
+  const { id, approve } = req.body;
+  
+  try {
+    if (approve) {
+      // Get request details
+      const [requestRows] = await db.query(`
+        SELECT client_id, provider_id, requested_date, requested_time
+        FROM appointment_requests
+        WHERE id = ?
+      `, [id]);
+      
+      if (!requestRows.length) {
+        return res.status(404).json({ message: 'Request not found' });
+      }
+      
+      const request = requestRows[0];
+      
+      // Create appointment
+      await db.query(`
+        INSERT INTO appointments (client_id, provider_id, appointment_date, appointment_time, status, created_at)
+        VALUES (?, ?, ?, ?, 'booked', NOW())
+      `, [request.client_id, request.provider_id, request.requested_date, request.requested_time]);
+      
+      // Update request status
+      await db.query(`
+        UPDATE appointment_requests SET status = 'approved' WHERE id = ?
+      `, [id]);
+      
+      res.json({ message: 'Appointment approved and booked' });
+    } else {
+      // Reject request
+      await db.query(`
+        UPDATE appointment_requests SET status = 'rejected' WHERE id = ?
+      `, [id]);
+      
+      res.json({ message: 'Appointment request rejected' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to respond to request' });
   }
 });
 

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Book Appointment with Client</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <h1>🔍 Search Clients</h1>
+  <input type="text" id="searchInput" placeholder="Search by name or email"/>
+  <button onclick="searchClients()">Search</button>
+  <ul id="clientResults"></ul>
+
+  <h2>📅 Client Calendar</h2>
+  <div id="calendar"></div>
+
+  <!-- 📤 Confirm Booking Dialog -->
+  <dialog id="bookingDialog">
+    <p id="bookingText"></p>
+    <button id="confirmBookingBtn">Send Request</button>
+    <button onclick="document.getElementById('bookingDialog').close()">Cancel</button>
+  </dialog>
+
+  <!-- ✅ Confirmation Dialog -->
+  <dialog id="confirmationDialog">
+    <p>✅ Appointment request sent successfully!</p>
+    <button onclick="document.getElementById('confirmationDialog').close()">Close</button>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script>
+    let selectedClientId = null;
+    let selectedSlot = null;
+
+    async function searchClients() {
+      const query = document.getElementById('searchInput').value.trim();
+      const res = await fetch(`/api/clients/search?query=${query}`);
+      const clients = await res.json();
+
+      const list = document.getElementById('clientResults');
+      list.innerHTML = '';
+      clients.forEach(c => {
+        const li = document.createElement('li');
+        li.textContent = `${c.name} (${c.email})`;
+        li.onclick = () => loadCalendar(c.id);
+        list.appendChild(li);
+      });
+    }
+
+    async function loadCalendar(clientId) {
+      selectedClientId = clientId;
+      // For clients, we show the provider's own availability
+      const providerId = localStorage.getItem('userId');
+      const res = await fetch(`/api/clients/${providerId}/availability`);
+      const availability = await res.json();
+
+      const events = availability.map(slot => ({
+        title: 'Available',
+        start: `${slot.day_of_week}T${slot.start_time}`,
+        allDay: false
+      }));
+
+      const calendarEl = document.getElementById('calendar');
+      calendarEl.innerHTML = ''; // Clear previous calendar
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        timeZone: 'local',
+        events,
+        dateClick: function(info) {
+          selectedSlot = info.dateStr;
+
+          const date = selectedSlot.split('T')[0];
+          const time = selectedSlot.split('T')[1].slice(0, 5);
+          document.getElementById('bookingText').textContent =
+            `Do you want to send a request for ${date} at ${time}?`;
+
+          document.getElementById('bookingDialog').showModal();
+        }
+      });
+
+      calendar.render();
+    }
+
+    // Handle confirm booking
+    document.getElementById('confirmBookingBtn').onclick = async () => {
+      const userId = localStorage.getItem('userId');
+      if (!userId || !selectedClientId || !selectedSlot) return;
+
+      const date = selectedSlot.split('T')[0];
+      const time = selectedSlot.split('T')[1].slice(0, 5);
+
+      try {
+        const res = await fetch('/api/appointment-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: selectedClientId,
+            provider_id: userId,
+            requested_date: date,
+            requested_time: time
+          })
+        });
+
+        const data = await res.json();
+        document.getElementById('bookingDialog').close();
+
+        if (res.ok) {
+          document.getElementById('confirmationDialog').showModal();
+        } else {
+          alert(data.message || 'Failed to send request');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error');
+      }
+    };
+  </script>
+</body>
+</html>
