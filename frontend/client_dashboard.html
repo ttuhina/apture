@@ -14,8 +14,10 @@
       <h1>Welcome, Client 👋</h1>
       <nav>
         <button onclick="location.href='appointments.html'">Book Appointment</button>
-        <button onclick="location.href='profile.html'">Profile</button>
-        <button onclick="logout()">Logout</button>
+        <button onclick="openClientProfileDialog()">Profile</button>
+
+        <button onclick="confirmLogout()">Logout</button>
+
       </nav>
     </header>
 
@@ -42,5 +44,22 @@
   </div>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script src="script.js"></script> 
+<dialog id="logoutConfirmDialog">
+  <p>Are you sure you want to log out?</p>
+  <button onclick="confirmLogoutYes()">Yes</button>
+  <button onclick="confirmLogoutNo()">No</button>
+</dialog>
+<dialog id="profileDialog">
+  <form method="dialog">
+    <h2>Edit Profile</h2>
+    <input id="clientName" placeholder="Name" />
+    <input id="clientEmail" placeholder="Email" />
+    <input id="clientPhone" placeholder="Phone" />
+    <button type="submit" onclick="saveClientProfile()">Save</button>
+    <button onclick="document.getElementById('profileDialog').close()">Cancel</button>
+  </form>
+</dialog>
+
+
 </body>
 </html>

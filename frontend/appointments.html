@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Book Appointment</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <h1>🔍 Search Providers</h1>
+  <input type="text" id="searchInput" placeholder="Search by name, email, or specialization"/>
+  <button onclick="searchProviders()">Search</button>
+  <ul id="providerResults"></ul>
+
+  <h2>📅 Provider Calendar</h2>
+  <div id="calendar"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script>
+    let selectedProviderId = null;
+
+    async function searchProviders() {
+      const query = document.getElementById('searchInput').value.trim();
+      const res = await fetch(`/api/providers/search?query=${query}`);
+      const providers = await res.json();
+
+      const list = document.getElementById('providerResults');
+      list.innerHTML = '';
+      providers.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `${p.name} (${p.specialization || 'N/A'})`;
+        li.onclick = () => loadCalendar(p.user_id);
+        list.appendChild(li);
+      });
+    }
+
+    async function loadCalendar(providerId) {
+      selectedProviderId = providerId;
+      const res = await fetch(`/api/providers/${providerId}/availability`);
+      const availability = await res.json();
+
+      const events = availability.map(slot => ({
+        title: 'Available',
+        start: `${slot.day_of_week}T${slot.start_time}`,
+        allDay: false
+      }));
+
+      const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'timeGridWeek',
+        timeZone: 'local',
+        events,
+        dateClick: async function(info) {
+          const confirmBook = confirm(`Send request for ${info.dateStr}?`);
+          if (confirmBook) {
+            const userId = localStorage.getItem('userId');
+            const date = info.dateStr.split('T')[0];
+            const time = info.dateStr.split('T')[1].slice(0, 5);
+
+            const res = await fetch('/api/appointment-requests', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                client_id: userId,
+                provider_id: providerId,
+                requested_date: date,
+                requested_time: time
+              })
+            });
+
+            const data = await res.json();
+            alert(data.message);
+          }
+        }
+      });
+
+      calendar.render();
+    }
+  </script>
+</body>
+</html>

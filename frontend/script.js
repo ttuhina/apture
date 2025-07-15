@@ -1,5 +1,3 @@
-
-
 // 🔄 Role toggle handler
 function toggleRole() {
   const toggle = document.getElementById('roleToggle');
@@ -13,13 +11,6 @@ function toggleRole() {
     roleText.textContent = 'Provider';
     roleInput.value = 'provider';
   }
-}
-
-// 🔓 Logout logic
-function logout() {
-  localStorage.clear();
-  alert('Logged out');
-  window.location.href = 'login.html';
 }
 
 // 🚪 Login handler (only on login.html)
@@ -42,12 +33,9 @@ async function handleLogin() {
       });
 
       const data = await res.json();
-      console.log('🛠 Login response:', data);
-
       if (res.ok) {
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('role', role);
-
         window.location.href =
           role === 'client' ? 'client_dashboard.html' : 'provider_dashboard.html';
       } else {
@@ -82,7 +70,6 @@ if (isSignupPage && signupForm) {
       });
 
       const data = await res.json();
-
       if (res.ok) {
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('role', role);
@@ -134,23 +121,6 @@ async function loadAppointments() {
       });
     }
 
-
-// 🧼 Optional: Logout confirmation
-function confirmLogout() {
-  const dialog = document.getElementById('logoutConfirmDialog');
-  dialog.showModal();
-}
-
-function confirmLogoutYes() {
-  localStorage.clear();
-  window.location.href = 'login.html';
-}
-
-function confirmLogoutNo() {
-  document.getElementById('logoutConfirmDialog').close();
-}
-
-
     if (notificationsEl) {
       notificationsEl.innerHTML = '';
       appointments.forEach(app => {
@@ -186,6 +156,65 @@ function confirmLogoutNo() {
   }
 }
 
+// 🔐 Logout confirmation dialog
+function confirmLogout() {
+  const dialog = document.getElementById('logoutConfirmDialog');
+  if (dialog) dialog.showModal();
+}
+
+function confirmLogoutYes() {
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+
+function confirmLogoutNo() {
+  const dialog = document.getElementById('logoutConfirmDialog');
+  if (dialog) dialog.close();
+}
+
+// 👤 Load and open client profile dialog
+async function openClientProfileDialog() {
+  const userId = localStorage.getItem('userId');
+  if (!userId) return alert("Session expired. Login again.");
+
+  try {
+    const res = await fetch(`/api/user/${userId}`);
+    const data = await res.json();
+
+    document.getElementById('clientName').value = data.name || '';
+    document.getElementById('clientEmail').value = data.email || '';
+    document.getElementById('clientPhone').value = data.phone || '';
+    document.getElementById('profileDialog').showModal();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to load profile');
+  }
+}
+
+// ✏️ Save updated client profile
+async function saveClientProfile() {
+  const userId = localStorage.getItem('userId');
+  const name = document.getElementById('clientName').value.trim();
+  const email = document.getElementById('clientEmail').value.trim();
+  const phone = document.getElementById('clientPhone').value.trim();
+
+  try {
+    const res = await fetch(`/api/user/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone })
+    });
+
+    const data = await res.json();
+    alert(data.message || 'Profile updated');
+    document.getElementById('profileDialog').close();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to save profile');
+  }
+}
+
+// 🧠 Dashboard header update
 async function updateDashboardHeader() {
   const userId = localStorage.getItem('userId');
   const role = localStorage.getItem('role');
@@ -204,79 +233,17 @@ async function updateDashboardHeader() {
     console.error('Failed to update header name', err);
   }
 }
-function openAvailabilityDialog() {
-  document.getElementById('availabilityDialog').showModal();
-}
 
-function saveAvailability() {
-  const workingHours = document.getElementById('workingHoursInput').value.trim();
-  const userId = localStorage.getItem('userId');
-
-  fetch(`/api/provider-profile/${userId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ working_hours: workingHours })
-  })
-    .then(res => res.json())
-    .then(data => {
-      alert(data.message || 'Working hours updated');
-      document.getElementById('availabilityDialog').close();
-    })
-    .catch(err => {
-      console.error(err);
-      alert('Error saving availability');
-    });
-}
-// 🌐 Opens the profile dialog
-async function openProfileDialog() {
-  const userId = localStorage.getItem('userId');
-  const dialog = document.getElementById('profileDialog');
-
-  try {
-    const res = await fetch(`/api/provider-profile/${userId}`);
-    const data = await res.json();
-
-    document.getElementById('profileName').value = data.name;
-    document.getElementById('profileSpecialization').value = data.specialization;
-    document.getElementById('profileLocation').value = data.location;
-    document.getElementById('profileBio').value = data.bio;
-    document.getElementById('profileWorkingHours').value = data.working_hours;
-
-    dialog.showModal();
-  } catch (err) {
-    console.error('Failed to load profile:', err);
-    alert('Error loading profile.');
-  }
-}
-
-// 🌐 Confirm Logout Logic
-function confirmLogout() {
-  const dialog = document.getElementById('logoutConfirmDialog');
-  dialog.showModal();
-}
-
-function confirmLogoutYes() {
-  localStorage.clear();
-  window.location.href = 'login.html';
-}
-
-function confirmLogoutNo() {
-  document.getElementById('logoutConfirmDialog').close();
-}
-
+// 📅 Init dashboard logic
 document.addEventListener('DOMContentLoaded', () => {
   const pageTitle = document.title;
-  const logoutBtn = document.querySelector('button[onclick="logout()"]');
 
   if (pageTitle.includes('Login')) {
     handleLogin();
   }
 
-  if (logoutBtn) logoutBtn.addEventListener('click', logout);
-
-  // Load appointments on dashboard
   if (pageTitle.includes('Dashboard')) {
     loadAppointments();
-    updateDashboardHeader(); // Call to update header name
+    updateDashboardHeader();
   }
 });
