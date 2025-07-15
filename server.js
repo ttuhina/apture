@@ -168,14 +168,24 @@ app.get('/api/providers/:userId/availability', async (req, res) => {
   }
 });
 
-// 📤 Appointment Request
 app.post('/api/appointment-requests', async (req, res) => {
-  const { client_id, provider_id, requested_date, requested_time } = req.body;
+  const { client_id, provider_id: userProvidedProviderId, requested_date, requested_time } = req.body;
+
   try {
-    await db.query(`
-      INSERT INTO appointment_requests (client_id, provider_id, requested_date, requested_time, status, created_at)
-      VALUES (?, ?, ?, ?, 'pending', NOW())
-    `, [client_id, provider_id, requested_date, requested_time]);
+    // Translate user_id to provider.id
+    const [rows] = await db.query(`SELECT id FROM providers WHERE user_id = ?`, [userProvidedProviderId]);
+
+    if (rows.length === 0) {
+      return res.status(400).json({ message: 'Provider not found' });
+    }
+
+    const provider_id = rows[0].id;
+
+    await db.query(
+      `INSERT INTO appointment_requests (client_id, provider_id, requested_date, requested_time, status, created_at)
+       VALUES (?, ?, ?, ?, 'pending', NOW())`,
+      [client_id, provider_id, requested_date, requested_time]
+    );
 
     res.status(201).json({ message: 'Appointment request sent' });
   } catch (err) {
@@ -183,6 +193,7 @@ app.post('/api/appointment-requests', async (req, res) => {
     res.status(500).json({ message: 'Failed to request appointment' });
   }
 });
+
 
 // 🔧 Update Client Profile
 app.put('/api/user/:userId', async (req, res) => {
