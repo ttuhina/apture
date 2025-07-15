@@ -100,50 +100,35 @@ async function loadAppointments() {
       ? ''
       : '<p>No upcoming appointments.</p>';
 
-    const formatDate = (dateStr) => {
-      const [year, month, day] = dateStr.split('-');
-      return `${day}/${month}/${year}`;
-    };
-
-    const formatTime = (timeStr) => {
-      return timeStr.replace(':', '.').slice(0, 5);
-    };
-
     appointments.forEach(app => {
-  // Format date as DD/MM/YYYY
-  const rawDate = new Date(app.appointment_date);
-  const day = String(rawDate.getDate()).padStart(2, '0');
-  const month = String(rawDate.getMonth() + 1).padStart(2, '0');
-  const year = rawDate.getFullYear();
-  const formattedDate = `${day}/${month}/${year}`;
+      // Format date to DD/MM/YYYY
+      const rawDate = new Date(app.appointment_date);
+      const formattedDate = `${String(rawDate.getDate()).padStart(2, '0')}/${String(rawDate.getMonth() + 1).padStart(2, '0')}/${rawDate.getFullYear()}`;
 
-  // Format time as HH.MM
-  const timeParts = app.appointment_time.split(':'); // e.g., "14:30:00"
-  const formattedTime = `${timeParts[0]}.${timeParts[1]}`;
+      // Format time to HH.MM
+      const timeParts = app.appointment_time.split(':');
+      const formattedTime = `${timeParts[0]}.${timeParts[1]}`;
 
-  // Choose label based on role
-  const role = localStorage.getItem('role');
-  const secondaryText = role === 'provider' ? app.client_name : `${app.provider_name} – ${app.specialization}`;
+      const secondaryText = role === 'provider'
+        ? app.client_name
+        : `${app.provider_name} – ${app.specialization}`;
 
-  // Create appointment entry
-  const item = document.createElement('div');
-  item.className = 'appointment-item';
-  item.innerHTML = `<p>📅 ${formattedDate} at 🕑 ${formattedTime}</p><p>👤 ${secondaryText}</p>`;
-  appointmentsContainer.appendChild(item);
+      const item = document.createElement('div');
+      item.className = 'appointment-item';
+      item.innerHTML = `<p>📅 ${formattedDate} at 🕑 ${formattedTime}</p><p>👤 ${secondaryText}</p>`;
+      appointmentsContainer.appendChild(item);
 
-  // Notifications
-  if (notificationsEl) {
-    const li = document.createElement('li');
-    li.textContent = `🕒 ${formattedDate} at ${formattedTime} with ${secondaryText}`;
-    notificationsEl.appendChild(li);
-  }
-});
-
+      if (notificationsEl) {
+        const li = document.createElement('li');
+        li.textContent = `🕒 ${formattedDate} at ${formattedTime} with ${secondaryText}`;
+        notificationsEl.appendChild(li);
+      }
+    });
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',
       events: appointments.map(app => ({
-        title: role === 'provider' ? app.client_name : app.specialization,
+        title: role === 'provider' ? app.client_name : `${app.provider_name} – ${app.specialization}`,
         start: `${app.appointment_date}T${app.appointment_time}`,
         color: '#4a90e2',
       })),
@@ -167,7 +152,7 @@ function confirmLogoutNo() {
   document.getElementById('logoutConfirmDialog')?.close();
 }
 
-// 👤 Profile load + save
+// 👤 Load & edit client profile
 async function openClientProfileDialog() {
   const userId = localStorage.getItem('userId');
   try {
@@ -206,7 +191,7 @@ async function saveClientProfile() {
   }
 }
 
-// 🧠 Custom confirmation dialog
+// 💬 Custom confirmation dialog
 function showCustomConfirm(message) {
   return new Promise((resolve) => {
     const dialog = document.createElement('dialog');
@@ -227,7 +212,7 @@ function showCustomConfirm(message) {
   });
 }
 
-// 👋 Update dashboard header
+// 👋 Update dashboard greeting
 async function updateDashboardHeader() {
   const userId = localStorage.getItem('userId');
   const role = localStorage.getItem('role');
@@ -237,7 +222,7 @@ async function updateDashboardHeader() {
     const res = await fetch(`/api/user/${userId}`);
     const user = await res.json();
     const header = document.getElementById('dashboardTitle');
-    if (header) header.textContent = `Welcome, ${user.name} ${role === 'provider' ? '👩‍⚕️' : '🙂'}`;
+    if (header) header.textContent = `Welcome, ${user.name} ${role === 'provider' ? '👩‍⚕️' : '👋'}`;
   } catch (err) {
     console.error('Header update failed', err);
   }

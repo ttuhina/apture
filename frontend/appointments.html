@@ -15,9 +15,23 @@
   <h2>📅 Provider Calendar</h2>
   <div id="calendar"></div>
 
+  <!-- 📤 Confirm Booking Dialog -->
+  <dialog id="bookingDialog">
+    <p id="bookingText"></p>
+    <button id="confirmBookingBtn">Send Request</button>
+    <button onclick="document.getElementById('bookingDialog').close()">Cancel</button>
+  </dialog>
+
+  <!-- ✅ Confirmation Dialog -->
+  <dialog id="confirmationDialog">
+    <p>✅ Appointment request sent successfully!</p>
+    <button onclick="document.getElementById('confirmationDialog').close()">Close</button>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
   <script>
     let selectedProviderId = null;
+    let selectedSlot = null;
 
     async function searchProviders() {
       const query = document.getElementById('searchInput').value.trim();
@@ -45,36 +59,61 @@
         allDay: false
       }));
 
-      const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+      const calendarEl = document.getElementById('calendar');
+      calendarEl.innerHTML = ''; // Clear previous calendar
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         timeZone: 'local',
         events,
-        dateClick: async function(info) {
-          const confirmBook = confirm(`Send request for ${info.dateStr}?`);
-          if (confirmBook) {
-            const userId = localStorage.getItem('userId');
-            const date = info.dateStr.split('T')[0];
-            const time = info.dateStr.split('T')[1].slice(0, 5);
+        dateClick: function(info) {
+          selectedSlot = info.dateStr;
 
-            const res = await fetch('/api/appointment-requests', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                client_id: userId,
-                provider_id: providerId,
-                requested_date: date,
-                requested_time: time
-              })
-            });
+          const date = selectedSlot.split('T')[0];
+          const time = selectedSlot.split('T')[1].slice(0, 5);
+          document.getElementById('bookingText').textContent =
+            `Do you want to send a request for ${date} at ${time}?`;
 
-            const data = await res.json();
-            alert(data.message);
-          }
+          document.getElementById('bookingDialog').showModal();
         }
       });
 
       calendar.render();
     }
+
+    // Handle confirm booking
+    document.getElementById('confirmBookingBtn').onclick = async () => {
+      const userId = localStorage.getItem('userId');
+      if (!userId || !selectedProviderId || !selectedSlot) return;
+
+      const date = selectedSlot.split('T')[0];
+      const time = selectedSlot.split('T')[1].slice(0, 5);
+
+      try {
+        const res = await fetch('/api/appointment-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: userId,
+            provider_id: selectedProviderId,
+            requested_date: date,
+            requested_time: time
+          })
+        });
+
+        const data = await res.json();
+        document.getElementById('bookingDialog').close();
+
+        if (res.ok) {
+          document.getElementById('confirmationDialog').showModal();
+        } else {
+          alert(data.message || 'Failed to send request');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error');
+      }
+    };
   </script>
 </body>
 </html>
