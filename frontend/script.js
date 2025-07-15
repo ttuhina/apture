@@ -110,22 +110,35 @@ async function loadAppointments() {
     };
 
     appointments.forEach(app => {
-      const item = document.createElement('div');
-      item.className = 'appointment-item';
+  // Format date as DD/MM/YYYY
+  const rawDate = new Date(app.appointment_date);
+  const day = String(rawDate.getDate()).padStart(2, '0');
+  const month = String(rawDate.getMonth() + 1).padStart(2, '0');
+  const year = rawDate.getFullYear();
+  const formattedDate = `${day}/${month}/${year}`;
 
-      const dateFormatted = formatDate(app.appointment_date);
-      const timeFormatted = formatTime(app.appointment_time);
-      const contextText = role === 'provider' ? app.client_name : app.specialization;
+  // Format time as HH.MM
+  const timeParts = app.appointment_time.split(':'); // e.g., "14:30:00"
+  const formattedTime = `${timeParts[0]}.${timeParts[1]}`;
 
-      item.innerHTML = `<p>📅 ${dateFormatted} at 🕑 ${timeFormatted}</p><p>👤 ${contextText}</p>`;
-      appointmentsContainer.appendChild(item);
+  // Choose label based on role
+  const role = localStorage.getItem('role');
+  const secondaryText = role === 'provider' ? app.client_name : `${app.provider_name} – ${app.specialization}`;
 
-      if (notificationsEl) {
-        const li = document.createElement('li');
-        li.textContent = `🕒 ${dateFormatted} at ${timeFormatted} with ${contextText}`;
-        notificationsEl.appendChild(li);
-      }
-    });
+  // Create appointment entry
+  const item = document.createElement('div');
+  item.className = 'appointment-item';
+  item.innerHTML = `<p>📅 ${formattedDate} at 🕑 ${formattedTime}</p><p>👤 ${secondaryText}</p>`;
+  appointmentsContainer.appendChild(item);
+
+  // Notifications
+  if (notificationsEl) {
+    const li = document.createElement('li');
+    li.textContent = `🕒 ${formattedDate} at ${formattedTime} with ${secondaryText}`;
+    notificationsEl.appendChild(li);
+  }
+});
+
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',

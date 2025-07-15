@@ -73,14 +73,16 @@ app.get('/api/appointments/:userId', async (req, res) => {
   try {
     let rows;
     if (role === 'client') {
-      [rows] = await db.query(`
-        SELECT a.appointment_date, a.appointment_time, p.specialization
-        FROM appointments a
-        JOIN providers p ON a.provider_id = p.id
-        WHERE a.client_id = ? AND a.status = 'booked'
-        ORDER BY a.appointment_date, a.appointment_time
-      `, [userId]);
-    } else if (role === 'provider') {
+  [rows] = await db.query(`
+    SELECT a.appointment_date, a.appointment_time, u.name AS provider_name, p.specialization
+    FROM appointments a
+    JOIN providers p ON a.provider_id = p.id
+    JOIN users u ON p.user_id = u.id
+    WHERE a.client_id = ? AND a.status = 'booked'
+    ORDER BY a.appointment_date, a.appointment_time
+  `, [userId]);
+}
+ else if (role === 'provider') {
       [rows] = await db.query(`
         SELECT a.appointment_date, a.appointment_time, u.name AS client_name
         FROM appointments a
