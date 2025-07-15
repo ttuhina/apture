@@ -3,64 +3,184 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Client Dashboard | ApPointly</title>
+  <title>Provider Dashboard | Apture</title>
+
+  <!-- FullCalendar Styles -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css"/>
+  <!-- Your Enhanced Styles -->
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Additional provider-specific styles */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      text-align: center;
+      animation: statSlideIn 0.6s ease-out;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+    
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      color: #4a5568;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    @keyframes statSlideIn {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .request-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    .request-actions button {
+      flex: 1;
+      padding: 0.5rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-accept {
+      background: linear-gradient(45deg, #48bb78, #38a169);
+      color: white;
+    }
+    
+    .btn-accept:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+    }
+    
+    .btn-decline {
+      background: linear-gradient(45deg, #f56565, #e53e3e);
+      color: white;
+    }
+    
+    .btn-decline:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(245, 101, 101, 0.3);
+    }
+    
+    .floating-action-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .floating-action-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 12px 24px rgba(102, 126, 234, 0.4);
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-left: 0.5rem;
+    }
+    
+    .status-confirmed {
+      background: rgba(72, 187, 120, 0.2);
+      color: #38a169;
+    }
+    
+    .status-pending {
+      background: rgba(255, 193, 7, 0.2);
+      color: #d69e2e;
+    }
+    
+    .status-cancelled {
+      background: rgba(245, 101, 101, 0.2);
+      color: #e53e3e;
+    }
+  </style>
 </head>
 
 <body>
   <div class="dashboard-container">
+    <!-- Header -->
     <header class="dashboard-header">
-      <h1 id="dashboardTitle">Welcome 👋</h1>
+      <h1 id="dashboardTitle">Welcome, Dr. Smith 👩‍⚕️</h1>
 
       <nav>
-        <button onclick="location.href='appointments.html'">Book Appointment</button>
-        <button onclick="openClientProfileDialog()">Profile</button>
-
-        <button onclick="confirmLogout()">Logout</button>
-
+        <button onclick="location.href='provider_appointments.html'" class="hover-lift">
+          📅 Book Appointment
+        </button>
+        <button onclick="openAvailabilityDialog()" class="hover-lift">
+          ⏰ Set Availability
+        </button>
+        <button onclick="openProfileDialog()" class="hover-lift">
+          👤 Profile
+        </button>
+        <button onclick="confirmLogout()" class="hover-lift">
+          🚪 Logout
+        </button>
       </nav>
     </header>
 
+    <!-- Main Dashboard Content -->
     <div class="dashboard-content">
+      <!-- Left: Appointments -->
       <div class="left-panel">
-        <section class="appointments-section">
-          <h2>Your Upcoming Appointments</h2>
-          <div id="appointmentsList" class="appointments-list"></div>
-        </section>
-      </div>
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card hover-lift">
+            <div class="stat-number" id="todayCount">0</div>
+            <div class="stat-label">Today's Appointments</div>
+          </div>
+          <div class="stat-card hover-lift">
+            <div class="stat-number" id="weekCount">0</div>
+            <div class="stat-label">This Week</div>
+          </div>
+          <div class="stat-card hover-lift">
+            <div class="stat-number" id="pendingCount">0</div>
+            <div class="stat-label">Pending Requests</div>
+          </div>
+        </div>
 
-      <div class="right-panel">
-        <section class="calendar-section">
-          <h2>🗓️ Calendar</h2>
-          <div id="calendar"></div>
-        </section>
-
-        <section class="notifications-section">
-          <h2>🔔 Notifications</h2>
-          <ul id="notificationsList" class="notifications-list"></ul>
-        </section>
-      </div>
-    </div>
-  </div>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-<script src="script.js"></script> 
-<dialog id="logoutConfirmDialog">
-  <p>Are you sure you want to log out?</p>
-  <button onclick="confirmLogoutYes()">Yes</button>
-  <button onclick="confirmLogoutNo()">No</button>
-</dialog>
-<dialog id="profileDialog">
-  <form method="dialog">
-    <h2>Edit Profile</h2>
-    <input id="clientName" placeholder="Name" />
-    <input id="clientEmail" placeholder="Email" />
-    <input id="clientPhone" placeholder="Phone" />
-    <button type="submit" onclick="saveClientProfile()">Save</button>
-    <button onclick="document.getElementById('profileDialog').close()">Cancel</button>
-  </form>
-</dialog>
-
-
-</body>
-</html>
+        <section class="
