@@ -1,4 +1,4 @@
-// 🔄 Role toggle handler
+// 🔄 Role toggle
 function toggleRole() {
   const toggle = document.getElementById('roleToggle');
   const roleText = document.getElementById('roleText');
@@ -13,7 +13,7 @@ function toggleRole() {
   }
 }
 
-// 🚪 Login handler (only on login.html)
+// 🚪 Login handler
 async function handleLogin() {
   const form = document.getElementById('loginForm');
   if (!form) return;
@@ -36,147 +36,127 @@ async function handleLogin() {
       if (res.ok) {
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('role', role);
-        window.location.href =
-          role === 'client' ? 'client_dashboard.html' : 'provider_dashboard.html';
+        window.location.href = role === 'client' ? 'client_dashboard.html' : 'provider_dashboard.html';
       } else {
         alert(data.message || 'Login failed');
       }
     } catch (err) {
-      console.error('Login error:', err);
-      alert('Server error. Try again later.');
-    }
-  });
-}
-
-// ✍️ Signup handler (only on signup.html)
-const signupForm = document.getElementById('signupForm');
-const isSignupPage = document.title.includes('Sign Up');
-
-if (isSignupPage && signupForm) {
-  signupForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById('nameInput').value.trim();
-    const email = document.getElementById('emailInput').value.trim();
-    const phone = document.getElementById('phoneInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
-    const role = document.getElementById('roleInput').value;
-
-    try {
-      const res = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password, role }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem('userId', data.userId);
-        localStorage.setItem('role', role);
-        window.location.href =
-          role === 'client' ? 'client_dashboard.html' : 'provider_dashboard.html';
-      } else {
-        alert(data.message || 'Signup failed');
-      }
-    } catch (err) {
       console.error(err);
-      alert('Server error. Try again later.');
+      alert('Server error');
     }
   });
 }
 
-// 📥 Load appointments for client or provider
+// ✍️ Signup handler
+document.addEventListener('DOMContentLoaded', () => {
+  const signupForm = document.getElementById('signupForm');
+  if (signupForm && document.title.includes('Sign Up')) {
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('nameInput').value.trim();
+      const email = document.getElementById('emailInput').value.trim();
+      const phone = document.getElementById('phoneInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+      const role = document.getElementById('roleInput').value;
+
+      try {
+        const res = await fetch('/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, password, role }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem('userId', data.userId);
+          localStorage.setItem('role', role);
+          window.location.href = role === 'client' ? 'client_dashboard.html' : 'provider_dashboard.html';
+        } else {
+          alert(data.message || 'Signup failed');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error');
+      }
+    });
+  }
+});
+
+// 📅 Load appointments and notifications
 async function loadAppointments() {
   const userId = localStorage.getItem('userId');
   const role = localStorage.getItem('role');
-
-  if (!userId || !role) {
-    alert('Session expired. Please login again.');
-    window.location.href = 'login.html';
-    return;
-  }
-
-  const appointmentsContainer = document.getElementById('appointmentsList');
-  const calendarEl = document.getElementById('calendar');
-  const notificationsEl = document.getElementById('notificationsList');
-
-  if (!appointmentsContainer || !calendarEl) return;
+  if (!userId || !role) return window.location.href = 'login.html';
 
   try {
     const res = await fetch(`/api/appointments/${userId}?role=${role}`);
     const appointments = await res.json();
 
-    appointmentsContainer.innerHTML = '';
-    if (appointments.length === 0) {
-      appointmentsContainer.innerHTML = '<p>No upcoming appointments.</p>';
-    } else {
-      appointments.forEach(app => {
-        const div = document.createElement('div');
-        div.classList.add('appointment-item');
-        div.innerHTML = `
-          <p>📅 ${app.appointment_date} at 🕑 ${app.appointment_time}</p>
-          <p>👤 ${role === 'provider' ? app.client_name : app.specialization}</p>
-        `;
-        appointmentsContainer.appendChild(div);
-      });
-    }
+    const appointmentsContainer = document.getElementById('appointmentsList');
+    const calendarEl = document.getElementById('calendar');
+    const notificationsEl = document.getElementById('notificationsList');
 
-    if (notificationsEl) {
-      notificationsEl.innerHTML = '';
-      appointments.forEach(app => {
+    appointmentsContainer.innerHTML = appointments.length
+      ? ''
+      : '<p>No upcoming appointments.</p>';
+
+    const formatDate = (dateStr) => {
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    };
+
+    const formatTime = (timeStr) => {
+      return timeStr.replace(':', '.').slice(0, 5);
+    };
+
+    appointments.forEach(app => {
+      const item = document.createElement('div');
+      item.className = 'appointment-item';
+
+      const dateFormatted = formatDate(app.appointment_date);
+      const timeFormatted = formatTime(app.appointment_time);
+      const contextText = role === 'provider' ? app.client_name : app.specialization;
+
+      item.innerHTML = `<p>📅 ${dateFormatted} at 🕑 ${timeFormatted}</p><p>👤 ${contextText}</p>`;
+      appointmentsContainer.appendChild(item);
+
+      if (notificationsEl) {
         const li = document.createElement('li');
-        li.textContent = `🕒 Appointment on ${app.appointment_date} at ${app.appointment_time} with ${role === 'provider' ? app.client_name : app.specialization}`;
+        li.textContent = `🕒 ${dateFormatted} at ${timeFormatted} with ${contextText}`;
         notificationsEl.appendChild(li);
-      });
-    }
-
-    const calendarEvents = appointments.map(app => ({
-      title: role === 'provider' ? app.client_name : app.specialization || 'Appointment',
-      start: `${app.appointment_date}T${app.appointment_time}`,
-      color: '#4a90e2',
-      allDay: false
-    }));
+      }
+    });
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',
-      timeZone: 'local',
-      height: '100%',
-      events: calendarEvents,
-      headerToolbar: {
-        left: 'prev,next',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek'
-      }
+      events: appointments.map(app => ({
+        title: role === 'provider' ? app.client_name : app.specialization,
+        start: `${app.appointment_date}T${app.appointment_time}`,
+        color: '#4a90e2',
+      })),
     });
 
     calendar.render();
   } catch (err) {
-    console.error('❌ Error loading appointments:', err);
-    appointmentsContainer.innerHTML = '<p>Error loading appointments.</p>';
+    console.error('Failed to load appointments:', err);
   }
 }
 
-// 🔐 Logout confirmation dialog
+// 🔓 Logout dialog
 function confirmLogout() {
-  const dialog = document.getElementById('logoutConfirmDialog');
-  if (dialog) dialog.showModal();
+  document.getElementById('logoutConfirmDialog')?.showModal();
 }
-
 function confirmLogoutYes() {
   localStorage.clear();
   window.location.href = 'login.html';
 }
-
 function confirmLogoutNo() {
-  const dialog = document.getElementById('logoutConfirmDialog');
-  if (dialog) dialog.close();
+  document.getElementById('logoutConfirmDialog')?.close();
 }
 
-// 👤 Load and open client profile dialog
+// 👤 Profile load + save
 async function openClientProfileDialog() {
   const userId = localStorage.getItem('userId');
-  if (!userId) return alert("Session expired. Login again.");
-
   try {
     const res = await fetch(`/api/user/${userId}`);
     const data = await res.json();
@@ -186,17 +166,18 @@ async function openClientProfileDialog() {
     document.getElementById('clientPhone').value = data.phone || '';
     document.getElementById('profileDialog').showModal();
   } catch (err) {
-    console.error(err);
     alert('Failed to load profile');
   }
 }
 
-// ✏️ Save updated client profile
 async function saveClientProfile() {
   const userId = localStorage.getItem('userId');
   const name = document.getElementById('clientName').value.trim();
   const email = document.getElementById('clientEmail').value.trim();
   const phone = document.getElementById('clientPhone').value.trim();
+
+  const confirmed = await showCustomConfirm('Are you sure you want to update your profile?');
+  if (!confirmed) return;
 
   try {
     const res = await fetch(`/api/user/${userId}`, {
@@ -204,45 +185,55 @@ async function saveClientProfile() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, phone })
     });
-
     const data = await res.json();
     alert(data.message || 'Profile updated');
     document.getElementById('profileDialog').close();
   } catch (err) {
-    console.error(err);
     alert('Failed to save profile');
   }
 }
 
-// 🧠 Dashboard header update
+// 🧠 Custom confirmation dialog
+function showCustomConfirm(message) {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.innerHTML = `
+      <form method="dialog">
+        <p>${message}</p>
+        <menu>
+          <button value="no">No</button>
+          <button value="yes" autofocus>Yes</button>
+        </menu>
+      </form>`;
+    document.body.appendChild(dialog);
+    dialog.addEventListener('close', () => {
+      resolve(dialog.returnValue === 'yes');
+      dialog.remove();
+    });
+    dialog.showModal();
+  });
+}
+
+// 👋 Update dashboard header
 async function updateDashboardHeader() {
   const userId = localStorage.getItem('userId');
   const role = localStorage.getItem('role');
-
-  if (!userId || !role) return;
+  if (!userId) return;
 
   try {
     const res = await fetch(`/api/user/${userId}`);
     const user = await res.json();
-
     const header = document.getElementById('dashboardTitle');
-    if (header) {
-      header.textContent = `Welcome, ${user.name} ${role === 'provider' ? '👩‍⚕️' : '🙂'}`;
-    }
+    if (header) header.textContent = `Welcome, ${user.name} ${role === 'provider' ? '👩‍⚕️' : '🙂'}`;
   } catch (err) {
-    console.error('Failed to update header name', err);
+    console.error('Header update failed', err);
   }
 }
 
-// 📅 Init dashboard logic
+// ✅ Init dashboard
 document.addEventListener('DOMContentLoaded', () => {
-  const pageTitle = document.title;
-
-  if (pageTitle.includes('Login')) {
-    handleLogin();
-  }
-
-  if (pageTitle.includes('Dashboard')) {
+  if (document.title.includes('Login')) handleLogin();
+  if (document.title.includes('Dashboard')) {
     loadAppointments();
     updateDashboardHeader();
   }

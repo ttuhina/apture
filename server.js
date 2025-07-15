@@ -65,10 +65,11 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
-// 📅 Appointments
+// 📅 Appointments for client/provider
 app.get('/api/appointments/:userId', async (req, res) => {
   const { userId } = req.params;
   const { role } = req.query;
+
   try {
     let rows;
     if (role === 'client') {
@@ -96,6 +97,33 @@ app.get('/api/appointments/:userId', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch appointments' });
+  }
+});
+
+// 👤 Full user info (for profile dialog)
+app.get('/api/user/:userId', async (req, res) => {
+  try {
+    const [rows] = await db.query(`SELECT name, email, phone FROM users WHERE id = ?`, [req.params.userId]);
+    if (!rows.length) return res.status(404).json({ message: 'User not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error fetching user' });
+  }
+});
+
+// ✏️ Update client profile
+app.put('/api/user/:userId', async (req, res) => {
+  const { name, email, phone } = req.body;
+  try {
+    await db.query(`
+      UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?
+    `, [name, email, phone, req.params.userId]);
+
+    res.json({ message: 'Profile updated' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update client profile' });
   }
 });
 
@@ -168,57 +196,26 @@ app.get('/api/providers/:userId/availability', async (req, res) => {
   }
 });
 
+// 📩 Appointment Requests
 app.post('/api/appointment-requests', async (req, res) => {
   const { client_id, provider_id: userProvidedProviderId, requested_date, requested_time } = req.body;
 
   try {
-    // Translate user_id to provider.id
+    // Get actual provider.id using user_id
     const [rows] = await db.query(`SELECT id FROM providers WHERE user_id = ?`, [userProvidedProviderId]);
-
-    if (rows.length === 0) {
-      return res.status(400).json({ message: 'Provider not found' });
-    }
+    if (!rows.length) return res.status(400).json({ message: 'Provider not found' });
 
     const provider_id = rows[0].id;
 
-    await db.query(
-      `INSERT INTO appointment_requests (client_id, provider_id, requested_date, requested_time, status, created_at)
-       VALUES (?, ?, ?, ?, 'pending', NOW())`,
-      [client_id, provider_id, requested_date, requested_time]
-    );
+    await db.query(`
+      INSERT INTO appointment_requests (client_id, provider_id, requested_date, requested_time, status, created_at)
+      VALUES (?, ?, ?, ?, 'pending', NOW())
+    `, [client_id, provider_id, requested_date, requested_time]);
 
     res.status(201).json({ message: 'Appointment request sent' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to request appointment' });
-  }
-});
-
-
-// 🔧 Update Client Profile
-app.put('/api/user/:userId', async (req, res) => {
-  const { name, email, phone } = req.body;
-  try {
-    await db.query(`
-      UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?
-    `, [name, email, phone, req.params.userId]);
-
-    res.json({ message: 'Profile updated' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to update client profile' });
-  }
-});
-
-// 👤 Get User Info (for dashboard header)
-app.get('/api/user/:userId', async (req, res) => {
-  try {
-    const [rows] = await db.query(`SELECT name FROM users WHERE id = ?`, [req.params.userId]);
-    if (!rows.length) return res.status(404).json({ message: 'User not found' });
-    res.json(rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error fetching user' });
   }
 });
 
