@@ -262,6 +262,7 @@
       background: rgba(245, 101, 101, 0.2);
       color: #e53e3e;
     }
+
   </style>
 </head>
 
@@ -514,6 +515,8 @@
     }
 
     async function bookAppointment() {
+      const rescheduleId = document.getElementById('bookingDialog').getAttribute('data-reschedule-id');
+
       if (!selectedProvider) {
         alert('Please select a provider first');
         return;
@@ -638,9 +641,12 @@
           const item = document.createElement('div');
           item.className = 'appointment-item';
           item.innerHTML = `
-            <p>📅 ${formattedDate} at 🕑 ${formattedTime}</p>
-            <p>👤 ${secondaryText}</p>
-          `;
+  <div class="appointment-content">
+    <p>📅 ${formattedDate} at 🕑 ${formattedTime}</p>
+    <p>👤 ${secondaryText}</p>
+  
+`;
+
           appointmentsContainer.appendChild(item);
 
           if (notificationsEl) {

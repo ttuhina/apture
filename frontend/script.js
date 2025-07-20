@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
 // 📅 Load appointments and notifications
 async function loadAppointments() {
   const userId = localStorage.getItem('userId');
@@ -115,7 +114,25 @@ async function loadAppointments() {
 
       const item = document.createElement('div');
       item.className = 'appointment-item';
-      item.innerHTML = `<p>📅 ${formattedDate} at 🕑 ${formattedTime}</p><p>👤 ${secondaryText}</p>`;
+      item.innerHTML = `
+        <div class="appointment-content">
+          <p>📅 ${formattedDate} at 🕑 ${formattedTime}</p>
+          <p>👤 ${secondaryText}</p>
+        </div>
+        ${role === 'client' ? `
+          <div class="appointment-menu">
+            <button class="menu-dots" onclick="toggleDropdown(${app.id || 'null'})">⋮</button>
+            <div class="dropdown-menu" id="menu-${app.id || 'null'}">
+              <button class="dropdown-item reschedule" onclick="openRescheduleDialog(${app.id || 'null'}, '${app.provider_name}', '${app.specialization || 'General'}', ${app.provider_user_id || 'null'})">
+                📅 Reschedule
+              </button>
+              <button class="dropdown-item cancel" onclick="cancelAppointment(${app.id || 'null'})">
+                ❌ Cancel
+              </button>
+            </div>
+          </div>
+        ` : ''}
+      `;
       appointmentsContainer.appendChild(item);
 
       if (notificationsEl) {
@@ -125,16 +142,22 @@ async function loadAppointments() {
       }
     });
 
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      events: appointments.map(app => ({
-        title: role === 'provider' ? app.client_name : `${app.provider_name} – ${app.specialization}`,
-        start: `${app.appointment_date}T${app.appointment_time}`,
-        color: '#4a90e2',
-      })),
-    });
+    // Update stats if function exists
+    if (typeof updateStats === 'function') {
+      updateStats(appointments);
+    }
 
-    calendar.render();
+    if (calendarEl) {
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: appointments.map(app => ({
+          title: role === 'provider' ? app.client_name : `${app.provider_name} – ${app.specialization}`,
+          start: `${app.appointment_date}T${app.appointment_time}`,
+          color: '#4a90e2',
+        })),
+      });
+      calendar.render();
+    }
 
     // Load appointment requests for providers
     if (role === 'provider') {
@@ -144,7 +167,6 @@ async function loadAppointments() {
     console.error('Failed to load appointments:', err);
   }
 }
-
 // 📋 Load appointment requests for providers
 async function loadAppointmentRequests() {
   const userId = localStorage.getItem('userId');
